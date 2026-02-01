@@ -7,7 +7,7 @@ mkdir -p /tmp/mongo_backup
 
 echo "Backup started at $TIMESTAMP"
 
-# --- STEP 1: Dump production DB (compressed) ---
+# --- STEP 1: Dump production DB ---
 mongodump \
   --uri "$PROD_MONGO_URI" \
   --gzip \
@@ -32,19 +32,19 @@ if [ $? -ne 0 ]; then
 fi
 echo "Restore to backup DB successful"
 
-# --- STEP 3: Upload .gz file to Cloudflare R2 ---
+# --- STEP 3: Upload to Cloudflare R2 ---
 pip install boto3 --quiet
 
 python3 upload_to_r2.py "$BACKUP_FILE" "$TIMESTAMP"
 
 if [ $? -ne 0 ]; then
   echo "R2 UPLOAD FAILED (backup itself is fine)"
+  exit 1
 else
   echo "Uploaded to Cloudflare R2 successfully"
 fi
 
-# --- STEP 4: Cleanup temp files ---
+# --- STEP 4: Cleanup ---
 rm -f "$BACKUP_FILE"
 
 echo "Backup completed at $(date)"
-        
