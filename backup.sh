@@ -32,21 +32,19 @@ if [ $? -ne 0 ]; then
 fi
 echo "Restore to backup DB successful"
 
-# --- STEP 3: Upload .gz file to Google Drive ---
-echo "$GOOGLE_SERVICE_ACCOUNT_KEY" > /tmp/service_account.json
+# --- STEP 3: Upload .gz file to Cloudflare R2 ---
+pip install boto3 --quiet
 
-pip install google-api-python-client google-auth --quiet
-
-python3 upload_to_drive.py "$BACKUP_FILE" "$TIMESTAMP"
+python3 upload_to_r2.py "$BACKUP_FILE" "$TIMESTAMP"
 
 if [ $? -ne 0 ]; then
-  echo "GOOGLE DRIVE UPLOAD FAILED (backup itself is fine)"
+  echo "R2 UPLOAD FAILED (backup itself is fine)"
 else
-  echo "Uploaded to Google Drive successfully"
+  echo "Uploaded to Cloudflare R2 successfully"
 fi
 
 # --- STEP 4: Cleanup temp files ---
 rm -f "$BACKUP_FILE"
-rm -f /tmp/service_account.json
 
 echo "Backup completed at $(date)"
+        
