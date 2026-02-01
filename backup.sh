@@ -4,6 +4,8 @@ TIMESTAMP=$(date +"%Y%m%d_%H%M")
 BACKUP_DIR="/tmp/mongo_backup/$TIMESTAMP"
 BACKUP_FILE="/tmp/mongo_backup/backup_${TIMESTAMP}.gz"
 
+mkdir -p /tmp/mongo_backup
+
 echo "Backup started at $TIMESTAMP"
 
 # --- STEP 1: Dump production DB (compressed) ---
