@@ -2,14 +2,13 @@ name: MongoDB Backup
 
 on:
   schedule:
-    - cron: '0 13 * * *'   # 1:00 PM UTC every day
-    - cron: '0 20 * * *'   # 8:00 PM UTC every day
-  workflow_dispatch:   # Run manually too
+    - cron: '0 13 * * *'
+    - cron: '0 20 * * *'
+  workflow_dispatch:
 
 jobs:
   backup:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -19,17 +18,16 @@ jobs:
           wget -q https://fastdl.mongodb.org/tools/db/mongodb-database-tools-ubuntu2204-x86_64-100.9.0.tgz
           tar -xzf mongodb-database-tools-ubuntu2204-x86_64-100.9.0.tgz
           sudo mv mongodb-database-tools-ubuntu2204-x86_64-100.9.0/bin/* /usr/local/bin/
-          mongodump --version
 
       - name: Run Backup Script
+        # THIS SECTION IS CRITICAL: Map your GitHub Secrets to Env Vars
         env:
-          PROD_MONGO_URI:            ${{ secrets.PROD_MONGO_URI }}
-          BACKUP_MONGO_URI:          ${{ secrets.BACKUP_MONGO_URI }}
-          CLOUDFLARE_ACCOUNT_ID:     ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          # Updated to use standard R2 Access/Secret Keys
-          R2_ACCESS_KEY_ID:          ${{ secrets.R2_ACCESS_KEY_ID }}
-          R2_SECRET_ACCESS_KEY:      ${{ secrets.R2_SECRET_ACCESS_KEY }}
-          R2_BUCKET_NAME:            ${{ secrets.R2_BUCKET_NAME }}
+          PROD_MONGO_URI: ${{ secrets.PROD_MONGO_URI }}
+          BACKUP_MONGO_URI: ${{ secrets.BACKUP_MONGO_URI }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET_NAME: "thebakistry-backups" # Or use ${{ secrets.R2_BUCKET_NAME }}
         run: |
           chmod +x backup.sh
           ./backup.sh
