@@ -1,0 +1,33 @@
+name: MongoDB Backup
+
+on:
+  schedule:
+    - cron: '0 13 * * *'   # 1:00 PM UTC every day
+    - cron: '0 20 * * *'   # 8:00 PM UTC every day
+  workflow_dispatch:   # Lets you run it manually too
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Install MongoDB Tools
+        run: |
+          wget -qO - https://www.mongodb.com/static/pgp/server-7.0.asc | apt-key add -
+          echo "deb [ arch=amd64 ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/7.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-7.0.list
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq mongodb-org-tools
+
+      - name: Run Backup Script
+        env:
+          PROD_MONGO_URI:                ${{ secrets.PROD_MONGO_URI }}
+          BACKUP_MONGO_URI:             ${{ secrets.BACKUP_MONGO_URI }}
+          DB_NAME:                      ${{ secrets.DB_NAME }}
+          GOOGLE_SERVICE_ACCOUNT_KEY:   ${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}
+          GOOGLE_DRIVE_FOLDER_ID:       ${{ secrets.GOOGLE_DRIVE_FOLDER_ID }}
+        run: |
+          chmod +x backup.sh
+          ./backup.sh
