@@ -12,7 +12,7 @@ def upload_file(file_path, timestamp):
     s3 = boto3.client(
         "s3",
         region_name="auto",
-        endpoint_url=f"https://{account_id}.r2.cloudzero.com",
+        endpoint_url=f"https://{account_id}.r2.cloudflare.com",
         aws_access_key_id=api_token,
         aws_secret_access_key=api_token,
         config=Config(signature_version="s3v4")
