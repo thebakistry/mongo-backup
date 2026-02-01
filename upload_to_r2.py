@@ -6,13 +6,23 @@ from botocore.client import Config
 def upload_file(file_path, timestamp):
     # Retrieve environment variables
     account_id = os.environ.get("CLOUDFLARE_ACCOUNT_ID")
-    # Updated: Use separate variables for Access Key and Secret Key
     access_key = os.environ.get("R2_ACCESS_KEY_ID")
     secret_key = os.environ.get("R2_SECRET_ACCESS_KEY")
     bucket     = os.environ.get("R2_BUCKET_NAME")
 
+    # ERROR CHECK: Ensure variables are actually loaded
+    if not all([account_id, access_key, secret_key, bucket]):
+        missing = [k for k, v in {
+            "CLOUDFLARE_ACCOUNT_ID": account_id, 
+            "R2_ACCESS_KEY_ID": access_key, 
+            "R2_SECRET_ACCESS_KEY": secret_key, 
+            "R2_BUCKET_NAME": bucket
+        }.items() if not v]
+        print(f"Error: Missing environment variables: {', '.join(missing)}")
+        sys.exit(1)
+
     # Connect to Cloudflare R2
-    # FIX: The endpoint must be 'r2.cloudflarestorage.com'
+    # NOTE: Use .cloudflarestorage.com for the S3 API
     s3 = boto3.client(
         "s3",
         region_name="auto",
@@ -22,35 +32,27 @@ def upload_file(file_path, timestamp):
         config=Config(signature_version="s3v4")
     )
 
-    # Upload the backup file
     file_name = f"mongo_backup_{timestamp}.gz"
+    
     try:
+        print(f"Attempting to upload {file_name} to {bucket}...")
         s3.upload_file(file_path, bucket, file_name)
-        print(f"Uploaded: {file_name}")
+        print(f"✅ Upload successful!")
     except Exception as e:
-        print(f"Upload failed: {e}")
+        print(f"❌ Upload failed: {e}")
         sys.exit(1)
 
-    # Delete backups older than 30 days
     cleanup_old_backups(s3, bucket)
 
 def cleanup_old_backups(s3, bucket):
     cutoff = datetime.utcnow() - timedelta(days=30)
-
     try:
         response = s3.list_objects_v2(Bucket=bucket, Prefix="mongo_backup_")
         files = response.get("Contents", [])
-
-        deleted = 0
         for f in files:
-            # Ensure timezone-aware comparison if necessary, 
-            # or strip tzinfo from LastModified
             if f["LastModified"].replace(tzinfo=None) < cutoff:
                 s3.delete_object(Bucket=bucket, Key=f["Key"])
                 print(f"Deleted old backup: {f['Key']}")
-                deleted += 1
-
-        print(f"Cleaned up {deleted} old backup(s)")
     except Exception as e:
         print(f"Cleanup failed: {e}")
 
