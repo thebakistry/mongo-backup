@@ -1,7 +1,6 @@
 #!/bin/bash
 
 TIMESTAMP=$(date +"%Y%m%d_%H%M")
-BACKUP_DIR="/tmp/mongo_backup/$TIMESTAMP"
 BACKUP_FILE="/tmp/mongo_backup/backup_${TIMESTAMP}.gz"
 
 mkdir -p /tmp/mongo_backup
@@ -11,7 +10,6 @@ echo "Backup started at $TIMESTAMP"
 # --- STEP 1: Dump production DB (compressed) ---
 mongodump \
   --uri "$PROD_MONGO_URI" \
-  --db "$DB_NAME" \
   --gzip \
   --archive="$BACKUP_FILE"
 
@@ -24,7 +22,6 @@ echo "Dump successful — size: $(du -h $BACKUP_FILE | cut -f1)"
 # --- STEP 2: Restore into backup MongoDB ---
 mongorestore \
   --uri "$BACKUP_MONGO_URI" \
-  --db "${DB_NAME}_backup" \
   --drop \
   --gzip \
   --archive="$BACKUP_FILE"
